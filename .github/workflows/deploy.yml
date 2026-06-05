@@ -1,0 +1,31 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.SERVER_USER }}/SHAMBAIQ
+            git pull origin main
+            
+            # Create .env file from secrets
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
+            echo "WEATHERAI_API_KEY=${{ secrets.WEATHERAI_API_KEY }}" >> .env
+            echo "WEATHERAI_BASE_URL=${{ secrets.WEATHERAI_BASE_URL }}" >> .env
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+            
+            docker-compose down
+            docker-compose up --build -d

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useAuth } from "../context/AuthContext";
 import client from "../api/client";
@@ -20,13 +20,18 @@ function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
-  if (user) {
-    if (user.role === "admin") navigate({ to: "/admin" });
-    else if (user.role === "officer") navigate({ to: "/officer" });
-    else navigate({ to: "/farmer" });
-    return null;
-  }
+  useEffect(() => {
+    if (!user) return;
+
+    const destination =
+      user.role === "admin"
+        ? "/admin"
+        : user.role === "officer"
+          ? "/officer"
+          : "/farmer";
+
+    void navigate({ to: destination, replace: true });
+  }, [navigate, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,11 +41,6 @@ function LoginPage() {
       const response = await client.post("/auth/login", { username, password });
       login(response.data.token, response.data.user);
       toast.success("Welcome back!");
-
-      const role = response.data.user.role;
-      if (role === "admin") navigate({ to: "/admin" });
-      else if (role === "officer") navigate({ to: "/officer" });
-      else navigate({ to: "/farmer" });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Login failed");
     } finally {

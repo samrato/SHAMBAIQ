@@ -4,6 +4,42 @@
 
 ---
 
+## Live Demo
+
+**Production URL:** https://shambaiq.weatherai.willingtonjuma.space/
+
+---
+
+## Challenge Overview
+
+This repository was built as a practical demonstration of high-level WeatherAI API consumption. The goal was to create a simple but useful application that turns WeatherAI data into a clear, functional experience that can be reviewed through GitHub and a live deployment.
+
+### What this project demonstrates
+*   Direct consumption of WeatherAI API data from a production-style full-stack app.
+*   Role-based views for different users instead of a single generic dashboard.
+*   A deployment path that works behind a real subdomain and reverse proxy.
+*   A clean README with setup, run, and deployment guidance.
+
+### Screenshot
+
+![ShambaIQ dashboard preview](image/Screenshot%20from%202026-06-06%2017-23-47.png)
+
+---
+
+## Compare and Contrast
+
+### ShambaIQ vs a generic weather app
+*   A generic weather app shows temperature, rainfall, and forecasts. ShambaIQ turns the same data into farming actions such as spray windows, planting guidance, and risk labels.
+*   A generic app serves one audience. ShambaIQ separates the experience for farmers, officers, and admins.
+*   A generic app often stops at display. ShambaIQ includes workflow support like uploads, dashboard routing, and usage monitoring.
+
+### ShambaIQ vs a raw API demo
+*   A raw API demo proves requests work. ShambaIQ organizes those requests into a usable product.
+*   A raw demo usually shows JSON. ShambaIQ presents interpreted data with dashboards, cards, tables, and role-aware navigation.
+*   A raw demo is often hard to deploy cleanly. ShambaIQ includes Docker, environment configuration, and reverse-proxy deployment notes.
+
+---
+
 ## 🏗 High-Performance Architecture
 
 ShambaIQ uses a **Decoupled Full-Stack Architecture** optimized for speed, reliability, and extreme API efficiency.
@@ -18,6 +54,17 @@ ShambaIQ uses a **Decoupled Full-Stack Architecture** optimized for speed, relia
 *   **Instant Navigation:** Uses TanStack Router for type-safe, lightning-fast transitions.
 *   **Skeleton Loading:** Custom-designed skeleton screens provide immediate visual feedback while real data is being streamed from the backend.
 *   **Unified Dashboard:** A high-impact, single-page experience that consolidates all critical tools (Calendar, Spray Guide, AI Insights, and Orchard Intel) for the farmer.
+
+### Architecture Diagram
+
+```mermaid
+flowchart LR
+  U[User Browser] --> N[Host Nginx]
+  N --> F[Frontend Container :8088]
+  F --> B[Backend Container :5000]
+  B --> M[(MongoDB)]
+  B --> W[WeatherAI API]
+```
 
 ---
 
@@ -52,7 +99,13 @@ All data displayed in ShambaIQ is **live and real**, consumed directly from Weat
 
 ## 🚀 Deployment & Local Setup
 
-### 1. Environment Configuration
+### 1. Clone the Repository
+```bash
+git clone https://github.com/samrato/SHAMBAIQ.git
+cd SHAMBAIQ
+```
+
+### 2. Environment Configuration
 Create a `.env` file in the root directory:
 
 ```env
@@ -63,37 +116,34 @@ VITE_API_URL=/api
 FRONTEND_PORT=8088
 ```
 
-### 2. Quick Launch (Docker)
+### 3. Quick Launch (Docker)
 ```bash
 docker-compose up --build -d
 ```
 
 Access locally at `http://localhost:8088`.
 
-### 3. Production Subdomain
-The Docker stack no longer binds host port `80`. The frontend is published only on `127.0.0.1:8088`, then the host web server should proxy the subdomain to it:
-
-```nginx
-server {
-    listen 80;
-    server_name shambaiq.weatherai.willingtonjuma.space;
-
-    location / {
-        proxy_pass http://127.0.0.1:8088;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-The GitHub Actions deploy workflow writes this nginx config automatically when nginx is installed on the server.
-
 ### 4. Test Credentials
 Use these to explore the three perspectives of the platform:
 *   **Password for all users:** `123456789`
 *   **Usernames:** `admin`, `officer`, `farmer`
+
+### 5. Manual Start Option
+If you prefer not to use Docker, start each service separately:
+```bash
+cd backend
+npm install
+npm run build
+npm start
+```
+
+```bash
+cd frontend
+npm install
+VITE_API_URL=http://localhost:5000/api npm run dev
+```
+
+The frontend will run locally on the Vite port, and it will send API requests to the backend at `http://localhost:5000/api`.
 
 ---
 

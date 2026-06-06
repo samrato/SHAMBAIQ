@@ -3,16 +3,9 @@ import { Activity, Brain, TreePine, Webhook, MessageSquare, MapPin } from "lucid
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import client from "../api/client";
-import type { AdminDashboardData, QuotaMetric } from "@/lib/shambaiq-types";
+import type { AdminDashboardData, UsageOverview, QuotaMetric } from "@/lib/shambaiq-types";
 import { requireDashboardRole } from "@/lib/auth-routes";
 
 export const Route = createFileRoute("/admin")({
@@ -23,20 +16,49 @@ export const Route = createFileRoute("/admin")({
     const response = await client.get("/weather/admin-dashboard");
     return response.data;
   },
+  pendingComponent: AdminSkeleton,
   head: () => ({
     meta: [
       { title: "Admin Dashboard · ShambaIQ" },
       {
         name: "description",
-        content:
-          "API quota, webhook zones, SMS reach, and platform health for ShambaIQ administrators.",
+        content: "Platform health and WeatherAI usage monitoring.",
       },
-      { property: "og:title", content: "Admin Dashboard · ShambaIQ" },
-      { property: "og:description", content: "Platform-wide admin controls." },
     ],
   }),
   component: AdminPage,
 });
+
+function AdminSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between animate-pulse">
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-64 rounded-xl" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <Skeleton className="h-8 w-32 rounded-lg" />
+        </div>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-48 w-full rounded-2xl" />
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Skeleton className="h-64 rounded-3xl" />
+        <Skeleton className="h-64 rounded-3xl" />
+      </div>
+    </div>
+  );
+}
+
+function quotaPct(m: QuotaMetric) {
+  if (m.unlimited || m.limit === 0) return 0;
+  return Math.min(100, Math.round((m.used / m.limit) * 100));
+}
 
 function AdminPage() {
   const { usage, webhookZones, smsStats, throttle, meta } = Route.useLoaderData();
@@ -50,26 +72,26 @@ function AdminPage() {
   const treePct = quotaPct(treeScans);
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Platform health, WeatherAI usage, webhook zones, SMS reach.
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl uppercase">Admin Dashboard</h1>
+          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            Platform health, WeatherAI usage, and SMS reach.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">
+          <Badge variant="outline" className="font-bold">
             {meta.source === "live" ? "Live WeatherAI" : "Backend fallback"}
           </Badge>
-          <Badge className="border-transparent bg-primary text-primary-foreground">
+          <Badge className="border-transparent bg-primary text-primary-foreground font-black">
             Plan: {usage?.plan || "unknown"}
           </Badge>
         </div>
       </header>
 
       {throttle && (
-        <div className="rounded-lg border border-[var(--amber)] bg-[var(--amber)]/10 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[var(--amber)] bg-[var(--amber)]/10 px-4 py-3 text-sm font-bold text-[var(--amber-foreground)]">
           <strong>Auto-throttle active:</strong> AI quota below 50. All non-premium calls are
           switching to <code>ai=false</code>.
         </div>
@@ -100,100 +122,69 @@ function AdminPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Webhook className="h-4 w-4 text-primary" /> Webhook zones
-              </CardTitle>
-              <Badge variant="outline" className="text-[10px]">
-                Pro: up to 10
-              </Badge>
-            </div>
-            <CardDescription>One webhook per zone. Triggers per backend config.</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-lg font-black uppercase tracking-tight">
+              <Webhook className="h-5 w-5 text-primary" /> Webhook Zones
+            </CardTitle>
+            <CardDescription className="font-medium text-xs uppercase font-bold text-muted-foreground">
+              {webhookZones.length} active monitoring zones
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {webhookZones.map((z) => (
-              <div key={z.zone} className="rounded-lg border border-border p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold">
-                    <MapPin className="h-3 w-3 text-primary" />
-                    {z.zone}
+              <div key={z.id} className="flex items-center justify-between rounded-xl border border-border/40 bg-muted/20 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-background p-2 border border-border/50">
+                    <MapPin className="h-4 w-4 text-primary" />
                   </div>
-                  <Badge
-                    className={
-                      z.active
-                        ? "bg-[var(--success)]/15 text-[var(--success)]"
-                        : "bg-muted text-muted-foreground"
-                    }
-                  >
-                    {z.active ? "Active" : "Paused"}
-                  </Badge>
+                  <div>
+                    <p className="text-sm font-black">{z.zone}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">{z.farmers} farmers monitored</p>
+                  </div>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{z.farmers} farmers covered</p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {z.triggers.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
+                <Badge variant={z.active ? "secondary" : "outline"} className="font-black text-[10px] rounded-lg">
+                   {z.active ? "ACTIVE" : "INACTIVE"}
+                </Badge>
               </div>
             ))}
+            {webhookZones.length === 0 && (
+               <div className="py-10 text-center text-xs font-bold text-muted-foreground italic uppercase">No active webhook zones</div>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MessageSquare className="h-4 w-4 text-[var(--sky)]" /> SMS reach
-              </CardTitle>
-              <Badge variant="outline" className="text-[10px]">
-                Scale plan
-              </Badge>
-            </div>
-            <CardDescription>Stats from backend API</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-lg font-black uppercase tracking-tight">
+              <MessageSquare className="h-5 w-5 text-primary" /> SMS Reach
+            </CardTitle>
+            <CardDescription className="font-medium text-xs uppercase font-bold text-muted-foreground">
+              Monthly delivery statistics
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <Tile label="Total SMS" value={smsStats.total.toLocaleString()} />
-              <Tile
-                label="Delivery"
-                value={`${(smsStats.deliveryRate * 100).toFixed(1)}%`}
-                tone="success"
-              />
-              <Tile
-                label="Opt-out"
-                value={`${(smsStats.optOutRate * 100).toFixed(1)}%`}
-                tone="amber"
-              />
+          <CardContent className="space-y-6">
+            <div className="flex justify-between items-end border-b border-border/40 pb-4">
+               <div>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Total Sent</p>
+                  <p className="text-4xl font-black">{smsStats.total.toLocaleString()}</p>
+               </div>
+               <div className="text-right">
+                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Delivery Rate</p>
+                  <p className="text-xl font-black text-[var(--success)]">{(smsStats.deliveryRate * 100).toFixed(1)}%</p>
+               </div>
             </div>
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                By county
-              </p>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>County</TableHead>
-                    <TableHead className="text-right">Messages</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {smsStats.byCounty.map((c) => (
-                    <TableRow key={c.county}>
-                      <TableCell>{c.county}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {c.sent.toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="space-y-3">
+               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Reach by County</p>
+               {smsStats.byCounty.map(c => (
+                  <div key={c.county} className="flex justify-between items-center p-2 rounded-lg bg-muted/30">
+                     <span className="text-xs font-black uppercase tracking-tight">{c.county}</span>
+                     <span className="text-xs font-black">{c.sent.toLocaleString()} alerts</span>
+                  </div>
+               ))}
+               {smsStats.byCounty.length === 0 && (
+                  <div className="py-6 text-center text-[10px] font-bold text-muted-foreground italic uppercase">No regional SMS data</div>
+               )}
             </div>
           </CardContent>
         </Card>
@@ -202,75 +193,32 @@ function AdminPage() {
   );
 }
 
-function quotaPct(metric: QuotaMetric) {
-  if (metric.unlimited || metric.limit <= 0) return 0;
-  return (metric.used / metric.limit) * 100;
-}
-
-function QuotaCard({
-  icon: Icon,
-  title,
-  metric,
-  pct,
-  reset,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  metric: QuotaMetric;
-  pct: number;
-  reset: string;
-}) {
-  const danger = pct > 80;
-  const warn = pct > 60;
-  const color = danger ? "destructive" : warn ? "amber" : "primary";
-  const tones = {
-    primary: "bg-primary/10 text-primary",
-    amber: "bg-[var(--amber)]/20 text-[var(--amber-foreground)]",
-    destructive: "bg-destructive/15 text-destructive",
-  } as const;
+function QuotaCard({ icon: Icon, title, metric, pct, reset }: any) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="border-border/50 shadow-sm overflow-hidden">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">{title}</CardTitle>
-          <div className={`flex h-8 w-8 items-center justify-center rounded-md ${tones[color]}`}>
-            <Icon className="h-4 w-4" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Icon className="h-5 w-5" />
           </div>
+          <Badge className="bg-primary/10 text-primary border-transparent font-black text-[10px] uppercase">
+            {metric.unlimited ? "Unlimited" : `${pct}% Used`}
+          </Badge>
         </div>
+        <CardTitle className="text-base font-black uppercase mt-3">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-2xl font-bold">
-          {metric.used.toLocaleString()}{" "}
-          <span className="text-sm font-normal text-muted-foreground">
-            / {metric.unlimited ? "unlimited" : metric.limit.toLocaleString()}
-          </span>
+        <div className="flex items-baseline justify-between mb-2">
+          <p className="text-3xl font-black">{metric.used.toLocaleString()}</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase">
+             / {metric.unlimited ? "∞" : metric.limit.toLocaleString()}
+          </p>
+        </div>
+        <Progress value={pct} className="h-2 rounded-full" />
+        <p className="mt-3 text-[10px] font-bold text-muted-foreground uppercase italic">
+          Resets: {reset?.slice(0, 10)}
         </p>
-        <Progress value={pct} className="mt-3" />
-        <p className="mt-2 text-xs text-muted-foreground">Resets {reset}</p>
       </CardContent>
     </Card>
-  );
-}
-
-function Tile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "success" | "amber";
-}) {
-  const color =
-    tone === "success"
-      ? "text-[var(--success)]"
-      : tone === "amber"
-        ? "text-[var(--amber-foreground)]"
-        : "text-foreground";
-  return (
-    <div className="rounded-md border border-border bg-card p-3">
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold ${color}`}>{value}</p>
-    </div>
   );
 }

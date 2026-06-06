@@ -22,10 +22,39 @@ jobs:
             cd /root/SHAMBAIQ
             git pull origin main
 
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
-            echo "WEATHERAI_API_KEY=${{ secrets.WEATHERAI_API_KEY }}" >> .env
-            echo "WEATHERAI_BASE_URL=${{ secrets.WEATHERAI_BASE_URL }}" >> .env
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+            cat > .env <<'ENV'
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            WEATHERAI_API_KEY=${{ secrets.WEATHERAI_API_KEY }}
+            WEATHERAI_BASE_URL=${{ secrets.WEATHERAI_BASE_URL }}
+            VITE_API_URL=/api
+            FRONTEND_PORT=8088
+            ENV
 
-            docker compose down
-            docker compose up --build -d
+            docker compose down --remove-orphans
+            docker compose up --build -d --remove-orphans
+
+            if command -v nginx >/dev/null 2>&1; then
+              mkdir -p /etc/nginx/conf.d
+              cat > /etc/nginx/conf.d/shambaiq.conf <<'NGINX'
+            server {
+                listen 80;
+                server_name shambaiq.weatherai.willingtonjuma.space;
+
+                client_max_body_size 25m;
+
+                location / {
+                    proxy_pass http://127.0.0.1:8088;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                }
+            }
+            NGINX
+
+              nginx -t
+              systemctl reload nginx || service nginx reload
+            fi

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/officer")({
     const response = await client.get("/weather/officer-dashboard");
     return response.data;
   },
+  pendingComponent: OfficerSkeleton,
   head: () => ({
     meta: [
       { title: "Officer Dashboard · ShambaIQ" },
@@ -47,6 +49,27 @@ export const Route = createFileRoute("/officer")({
   }),
   component: OfficerPage,
 });
+
+function OfficerSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between animate-pulse">
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-64 rounded-xl" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <Skeleton className="h-10 w-32 rounded-xl" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Skeleton className="lg:col-span-2 h-[500px] rounded-3xl" />
+        <Skeleton className="h-[500px] rounded-3xl" />
+      </div>
+    </div>
+  );
+}
 
 function riskBadge(r: RiskLevel) {
   const map = {
@@ -67,7 +90,7 @@ function OfficerPage() {
 
   const [newFarmer, setNewFarmer] = useState({
     username: "",
-    password: "password123", // Default password
+    password: "password123",
     name: "",
     phone: "",
     county: "Bomet",
@@ -99,7 +122,7 @@ function OfficerPage() {
           ward: newFarmer.ward,
           crop: newFarmer.crop,
           acres: Number(newFarmer.acres),
-          lat: -0.7829, // Default for demo
+          lat: -0.7829,
           lon: 35.3447,
           timezone: "Africa/Nairobi"
         }
@@ -227,13 +250,6 @@ function OfficerPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {filtered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center text-sm font-medium text-muted-foreground italic">
-                      No farmers found in this region.
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -262,19 +278,6 @@ function OfficerPage() {
                 {advisory?.cropRecommendation || "Consult local officer for specific field advice."}
               </p>
             </div>
-
-            <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Regional Actions</p>
-              <div className="space-y-2">
-                {advisory?.actions?.slice(0, 2).map(a => (
-                   <div key={a} className="flex items-center gap-3 p-2.5 rounded-xl border border-border/40 bg-card/50">
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                      <span className="text-xs font-bold text-muted-foreground">{a}</span>
-                   </div>
-                ))}
-              </div>
-            </div>
-
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border/40">
               <Button className="font-black text-[10px] uppercase rounded-xl" size="sm">
                 <FileText className="mr-1.5 h-3.5 w-3.5" /> Report
@@ -295,12 +298,7 @@ function Kpi({
   label,
   value,
   tone,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  tone: "primary" | "destructive" | "amber" | "success";
-}) {
+}: any) {
   const tones = {
     primary: "bg-primary/10 text-primary",
     destructive: "bg-destructive/15 text-destructive",
@@ -310,7 +308,7 @@ function Kpi({
   return (
     <Card className="border-none shadow-sm bg-card overflow-hidden">
       <CardContent className="flex items-center gap-4 p-5">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${tones[tone]}`}>
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${tones[tone as keyof typeof tones]}`}>
           <Icon className="h-6 w-6" />
         </div>
         <div>

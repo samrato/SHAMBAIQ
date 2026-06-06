@@ -5,6 +5,7 @@ import client from "../api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Sprout, ArrowLeft } from "lucide-react";
 
@@ -104,13 +105,24 @@ function LoginPage() {
                   required
                 />
               </div>
-              <Button className="w-full shadow-lg shadow-primary/20" type="submit" disabled={isLoading} size="lg">
+              <Button className="w-full shadow-lg shadow-primary/20 font-black uppercase" type="submit" disabled={isLoading} size="lg">
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
             
-            <div className="mt-6 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-              Contact your local agricultural officer for account issues.
+            <div className="mt-8 space-y-4">
+              <div className="rounded-xl bg-muted/50 p-4 border border-border/50">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 text-center">Test Credentials (Pass: 123456789)</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <Badge variant="outline" className="justify-center py-1 font-bold text-[10px]">admin</Badge>
+                  <Badge variant="outline" className="justify-center py-1 font-bold text-[10px]">officer</Badge>
+                  <Badge variant="outline" className="justify-center py-1 font-bold text-[10px]">farmer</Badge>
+                </div>
+              </div>
+              
+              <div className="text-center text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                Contact your local agricultural officer for account issues.
+              </div>
             </div>
           </CardContent>
         </Card>

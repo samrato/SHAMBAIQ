@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -18,14 +19,13 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            cd /home/${{ secrets.SERVER_USER }}/SHAMBAIQ
+            cd /root/SHAMBAIQ
             git pull origin main
-            
-            # Create .env file from secrets
+
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
             echo "WEATHERAI_API_KEY=${{ secrets.WEATHERAI_API_KEY }}" >> .env
             echo "WEATHERAI_BASE_URL=${{ secrets.WEATHERAI_BASE_URL }}" >> .env
             echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-            
-            docker-compose down
-            docker-compose up --build -d
+
+            docker compose down
+            docker compose up --build -d

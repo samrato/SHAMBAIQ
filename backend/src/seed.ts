@@ -16,7 +16,7 @@ const seed = async () => {
     await User.deleteMany({});
     console.log('Cleared existing users.');
 
-    const passwordHash = await bcrypt.hash('password123', 10);
+    const passwordHash = await bcrypt.hash('123456789', 10);
 
     const users = [
       {
@@ -53,6 +53,24 @@ const seed = async () => {
           phone: '+254722222222',
           lat: -0.7829,
           lon: 35.3447,
+          timezone: 'Africa/Nairobi',
+        },
+      },
+      {
+        username: 'farmer2',
+        passwordHash,
+        role: UserRole.FARMER,
+        profileData: {
+          farmerId: 'f-002',
+          name: 'Mary Chepkoech',
+          county: 'Bomet',
+          ward: 'Longisa',
+          location: 'Marys Green Farm',
+          acres: 2.5,
+          crop: 'Tea',
+          phone: '+254733333333',
+          lat: -0.8229,
+          lon: 35.3847,
           timezone: 'Africa/Nairobi',
         },
       },

@@ -12,10 +12,6 @@ const seed = async () => {
     await mongoose.connect(MONGO_URI);
     console.log('Connected to MongoDB for seeding...');
 
-    // Clear existing users
-    await User.deleteMany({});
-    console.log('Cleared existing users.');
-
     const passwordHash = await bcrypt.hash('123456789', 10);
 
     const users = [
@@ -76,8 +72,14 @@ const seed = async () => {
       },
     ];
 
-    await User.insertMany(users);
-    console.log('Successfully seeded database with Admin, Officer, and Farmer.');
+    for (const user of users) {
+      await User.updateOne(
+        { username: user.username },
+        { $set: user },
+        { upsert: true }
+      );
+    }
+    console.log('Successfully seeded or updated demo users.');
 
     await mongoose.disconnect();
     console.log('Disconnected from MongoDB.');

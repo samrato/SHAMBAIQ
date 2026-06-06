@@ -17,9 +17,4 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/src ./src
 COPY tsconfig.json ./
 EXPOSE 5000
-
-# Use a shell script to seed then start
-RUN echo '#!/bin/sh\nnpm run seed\nnode dist/index.js' > start.sh
-RUN chmod +x start.sh
-
-CMD ["./start.sh"]
+CMD ["sh", "-c", "node dist/seed.js && exec node dist/index.js"]

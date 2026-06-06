@@ -11,7 +11,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/shambaiq';
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -23,15 +22,20 @@ app.get('/', (req, res) => {
   res.send('ShambaIQ API is running...');
 });
 
-// Database Connection
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-  });
+const connectDatabase = async () => {
+  for (;;) {
+    try {
+      await mongoose.connect(MONGO_URI);
+      console.log('Connected to MongoDB');
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+      return;
+    } catch (err) {
+      console.error('MongoDB connection error, retrying in 5 seconds:', err);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
+};
+
+connectDatabase();
